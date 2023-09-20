@@ -1,0 +1,50 @@
+[
+ {
+   "Stage": 0,
+   "Period": "Aug - Sep</br>",
+   "Milestones": "Project Plan, Webpage",
+   "Status": "In Progress"
+ },
+ {
+   "Stage": 1,
+   "Period": "Sep - Oct (15)",
+   "Milestones": "Data Preparation & Cleaning",
+   "Status": "–"
+ },
+ {
+   "Stage": 2,
+   "Period": "Oct - Dec",
+   "Milestones": "<p>Illicit Account Classifier</p>",
+   "Status": "–"
+ },
+ {
+   "Stage": 3,
+   "Period": "Sep - Oct",
+   "Milestones": "Phrase 2 milestones<\\br>",
+   "Status": "–"
+ },
+ {
+   "Stage": 4,
+   "Period": "Sep - Oct",
+   "Milestones": "Data Preparation",
+   "Status": "–"
+ },
+ {
+   "Stage": 5,
+   "Period": "Sep - Oct",
+   "Milestones": "Front-End Development & Integration",
+   "Status": "–"
+ },
+ {
+   "Stage": 6,
+   "Period": "Sep - Oct",
+   "Milestones": "Data Preparation",
+   "Status": "–"
+ },
+ {
+   "Stage": 7,
+   "Period": "Sep - Oct",
+   "Milestones": "Data Preparation",
+   "Status": "–"
+ }
+]
