@@ -1,0 +1,100 @@
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+# Load the packages.
+library(tidyverse)
+library(ggplot2)
+library(gridExtra)
+
+eth_data_test <- read_csv("/Users/idea/Documents/FYP/01 Data Collection/04 Final Usable Data/eth_data_real_date.csv")
+
+eth_data_test <- eth_data_test |> mutate(flag = case_when(flag == 0 ~ "normal", flag == 1 ~ "illicit")) |> mutate(flag = factor(flag))
+
+
+
+```
+
+
+### 0) First Tx & Last Tx Density
+```{r}
+
+first_tx_plot <- eth_data_test |> group_by(flag) |> ggplot(aes(firstTx, fill = flag)) + geom_density(alpha = 0.7) + labs(title = "Distribution of First Transaction time", x = "First Transaction Time", y = "Density", fill = "Account Types") + theme(legend.position = "bottom") + guides(fill = guide_legend(reverse = TRUE))
+
+last_tx_plot <- eth_data_test |> group_by(flag) |> ggplot(aes(lastTx, fill = flag)) + geom_density(alpha = 0.7) + labs(title = "Distribution of Last Transaction time", x = "Last Transaction Time", y = "Density", fill = "Account Types")  + theme(legend.position = "bottom" ) + guides(fill = guide_legend(reverse = TRUE))
+
+
+grid.arrange(first_tx_plot, last_tx_plot, ncol = 2)
+
+
+# + scale_fill_manual(values = c("#0DBFC4", "#F8786D"))
+
+
+total_tx_plot <- eth_data_test |> group_by(flag) |> ggplot(aes(total_transaction_count, fill = flag)) + geom_density(alpha = 0.7) + labs(title = "Distribution of Transaction Count by Types of Account", x = "log10(Total Transaction Count)", y = "Density", fill = "Account Types")  + scale_x_log10()  + theme(legend.position = "bottom", plot.margin = unit(c(0.2, 0.2, 0.2, 0.2), "inches")) + guides(fill = guide_legend(reverse = TRUE))
+
+print(total_tx_plot)
+
+
+```
+
+
+
+
+
+
+### 1) Transaction Count
+```{r}
+
+
+tx_cnt_plot <- eth_data_test |> group_by(flag) |> 
+  ggplot(aes(x = flag, y = total_transaction_count, fill = flag)) + 
+  geom_boxplot() + 
+  labs(title = "Distribution of Transaction count", x = "Types of Accounts", y = "log10(Transaction count)", fill = "Account Types")  + 
+  scale_y_log10() + coord_flip() + theme(legend.position = "bottom")
+
+
+# Send Amount
+send_amt_plot <- eth_data_test |> group_by(flag) |> 
+  ggplot(aes(x = flag, y = sendAmount, fill = flag)) + 
+  geom_boxplot(alpha = 0.7) + 
+  labs(title = "Distribution of Send Amount", x = "Types of Accounts", y = "log10(Send Amount)", fill = "Account Types")  + 
+  scale_y_log10() + coord_flip() + theme(legend.position = "bottom")
+
+grid.arrange(tx_cnt_plot, send_amt_plot, ncol = 2) 
+
+```
+
+
+# Combine the plots with gridExtra
+```{r}
+
+
+
+# Transaction Count (Histogram)
+eth_data_test |> group_by(flag) |> 
+  ggplot(aes(total_transaction_count, fill = flag)) + 
+  geom_histogram(binwidth = 0.5, bins = 30) + 
+  labs(title = "Distribution of Transaction count by Types of account", x = "Types of Accounts", y = "log10(Transaction count)", fill = "Account Types")  + 
+  scale_fill_manual(values = c("#0DBFC4", "#F8786D")) + 
+  theme(legend.position = "bottom") + scale_x_log10() + 
+  facet_grid(. ~ flag)
+
+
+# Transaction Count (Density)
+eth_data_test |> filter(!is.infinite(total_transaction_count)) |> 
+  group_by(flag) |> ggplot(aes(total_transaction_count, fill = flag)) + 
+  geom_density(alpha = 0.7) + 
+  labs(title = "Distribution of Transaction count by Types of account", x = "Types of Accounts", y = "log10(Transaction count)", fill = "Account Types")  + 
+  scale_fill_manual(values = c("#0DBFC4", "#F8786D")) + 
+  theme(legend.position = "bottom") + scale_x_log10()
+
+# TODO: plot Norm distribution curve --> see 2501 Lec06 p.65
+
+
+
+
+```
+

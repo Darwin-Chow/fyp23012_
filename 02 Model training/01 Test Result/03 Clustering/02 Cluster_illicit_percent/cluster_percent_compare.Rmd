@@ -1,0 +1,106 @@
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+# Load the packages.
+library(tidyverse)
+library(ggplot2)
+library(gridExtra)
+library(purrr)
+
+
+```
+
+
+### 0) Union Cluster indexes
+
+```{r}
+
+# X_sampled_data <- read_csv("X_sampled_data.csv")
+
+X_invScale_data <- read_csv("X_invScale_data.csv")
+# X_invScale_data |> head()
+
+# Hier Data
+hier_gp_non_zero_flag <- read_csv("Hier_gp_non0.csv")
+hier_gp_0_partial_flag <- read_csv("Hier_gp_0_partial_illicit.csv")
+
+
+# K-means Data
+km_gp_0_55 <- read_csv("KM_gp_0_55_illicit.csv")
+km_gp_3_47 <- read_csv("KM_gp_3_47_illicit.csv")
+km_gp_4_12 <- read_csv("KM_gp_4_12_illicit.csv")
+km_gp_6_98 <- read_csv("KM_gp_6_98_illicit.csv")
+
+
+km_gp_0_3 <- union(km_gp_0_55, km_gp_3_47)
+km_gp_0346 <- Reduce(union, list(km_gp_0_55, km_gp_3_47, km_gp_4_12, km_gp_6_98))
+
+hier_gp_non_zero_flag <- hier_gp_non_zero_flag |> mutate(cluster_gp = 1)
+hier_gp_all <- Reduce(union, list(hier_gp_non_zero_flag, hier_gp_0_partial_flag))
+# km_gp_0_3 |> print()
+# km_gp_0_3 |> dim()
+
+
+X_sampled_data <- X_invScale_data |> rename(index = ...1)
+
+# head(X_sampled_data)
+
+combined_X <- inner_join(X_sampled_data, km_gp_0346, by = "index")
+
+combined_X |> head()
+
+combined_X <- combined_X |> mutate(flag = factor(flag), cluster_gp = factor(cluster_gp))
+
+
+combined_X_hier <- inner_join(X_sampled_data, hier_gp_all, by = "index")
+combined_X_hier <- combined_X_hier |> mutate(flag = factor(flag), cluster_gp = factor(cluster_gp))
+
+
+# X_sampled_data |> ggplot(aes(x = sendAmount + receiveAmount)) + geom_density() + scale_x_log10()
+
+
+# combined_X |> ggplot(aes(x = sendAmount + receiveAmount, fill = cluster_gp)) + geom_density(alpha = 0.6) + scale_x_log10()
+
+
+
+
+# Hier Clustering
+combined_X_hier |> ggplot(aes(x = sendAmount, fill = cluster_gp)) + geom_density(alpha = 0.7) + scale_x_log10() + labs(title = "Send amounts among Hierarchical clusters (log10)", x = "Send Amount (log10)",y = "Density")
+
+combined_X_hier |>ggplot(aes(x = uniq_send_address_num, fill = cluster_gp)) + geom_boxplot(alpha = 0.7) + scale_x_log10() + labs(title = "Uniq number of send address among Hierarchical clusters (log10)", x = "Number of Unique send address (log10)", y = "Density")
+
+
+combined_X_hier |> ggplot(aes(x = transactionCount, fill = cluster_gp)) + geom_density(alpha = 0.7) + scale_x_log10() + labs(title = "Transaction Count among Hierarchical clusters (log10)", x = "Number of Transaction (log10)",y = "Density")
+
+
+combined_X_hier |> ggplot(aes(x = min_transaction_fee, fill = cluster_gp)) + geom_density(alpha = 0.7) + scale_x_log10() + labs(title = "Minimum Transaction fee among Hierarchical clusters (log10)", x = "Minimum Transaction fee (log10)", y = "Density")
+
+
+combined_X_hier |> ggplot(aes(x = mean_time_between_tx, fill = cluster_gp)) + geom_density(alpha = 0.7) + scale_x_log10() + labs(title = "Mean time between Transaction among Hierarchical clusters (log10)", x = "Mean time in seconds (log10)",y = "Density")
+
+combined_X_hier |> ggplot(aes(x = zero_val_tx_num, fill = cluster_gp)) + geom_density(alpha = 0.7) + scale_x_log10() + labs(title = "Number of Zero value Transaction among Hierarchical clusters (log10)", x = "Number of Transaction (log10)", y = "Density")
+
+
+
+
+# K-means
+combined_X |> ggplot(aes(x = sendAmount, fill = cluster_gp)) + geom_density(alpha = 0.7) + scale_x_log10() + labs(title = "Send amounts among clusters", y = "Density")
+
+# combined_X |> ggplot(aes(x = receiveAmount, fill = cluster_gp)) + geom_density(alpha = 0.7) + scale_x_log10() + labs(title = "Receive amounts among clusters", y = "Density")
+
+combined_X |> ggplot(aes(x = time_between_first_and_last_tx, fill = cluster_gp)) + geom_density(alpha = 0.7) + scale_x_log10() + labs(title = "Time between first and last transaction among clusters", y = "Density")
+
+combined_X |> ggplot(aes(x = uniq_send_address_num, fill = cluster_gp)) + geom_boxplot(alpha = 0.7) + scale_x_log10() + labs(title = "Uniq number of send address among clusters", y = "Density")
+
+combined_X |> ggplot(aes(x = min_gas_price, fill = cluster_gp)) + geom_boxplot(alpha = 0.7) + scale_x_log10() + labs(title = "Min gas price among clusters")
+
+combined_X |> ggplot(aes(x = mean_gas_price, fill = cluster_gp)) + geom_boxplot(alpha = 0.7) + scale_x_log10() + labs(title = "Means gas price among clusters")
+
+
+
+```
+
+

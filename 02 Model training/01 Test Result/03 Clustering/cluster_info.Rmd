@@ -1,0 +1,196 @@
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+# Load the packages.
+library(tidyverse)
+library(ggplot2)
+library(gridExtra)
+```
+
+
+### 0) PCA
+
+```{r}
+
+pca_data <- read_csv("pca_test.csv")
+
+pca_data |> filter(Components == 3)
+
+pca_data |> filter(EVR >= 95)
+
+pca_data |> filter(EVR >= 99)
+
+
+
+```
+
+
+
+
+### 1a)  DBSCAN cluster scores
+```{r}
+
+dbscan_pca_3 <- read_csv("DBSCAN_hyperparam.csv")
+dbscan_pca_52 <- read_csv("DBSCAN_hyperparam_new_52.csv")
+
+names(dbscan_pca_3)
+
+# Add PCA column
+dbscan_pca_3 <- dbscan_pca_3 |> mutate(pca = 3)
+dbscan_pca_52 <- dbscan_pca_52 |> mutate(pca = 52)
+
+dbscan_pca_diff <- union(dbscan_pca_3, dbscan_pca_52)
+dbscan_pca_diff <- hdbscan_pca_diff |> mutate(pca = factor(pca))
+
+dbscan_pca_diff |> filter(between(min_cluster_size, 300, 580)) |> ggplot(aes(x = min_cluster_size, y = sil_score, color = pca)) + geom_line()
+
+
+# Min/ max
+dbscan_pca_3 |> filter(!is.na(sil_score)) |> summarise(avg_sil = mean(sil_score), min_sil = min(sil_score), max_sil = max(sil_score), min_davies = min(davies_score), max_davies = max(davies_score))
+
+dbscan_pca_52 |> filter(!is.na(sil_score)) |> summarise(avg_sil = mean(sil_score), min_sil = min(sil_score), max_sil = max(sil_score), min_davies = min(davies_score), max_davies = max(davies_score))
+
+# Best Hyperparam
+# Best hyperparam for pca-52
+dbscan_pca_52 |> filter(!is.na(sil_score)) |> arrange(desc(sil_score)) |> select(eps, min_samples, sil_score, davies_score)
+
+```
+
+
+
+
+### 1b)  HDBSCAN cluster scores
+
+```{r}
+
+
+# TODO DBSCAN
+
+
+# HDBSCAN
+hdbscan_pca_3 <- read_csv("HDBSCAN_hyperparam.csv")
+hdbscan_pca_52 <- read_csv("HDBSCAN_hyperparam_new_pca_52.csv")
+
+
+# Add PCA column
+hdbscan_pca_3 <- hdbscan_pca_3 |> mutate(pca = 3)
+hdbscan_pca_52 <- hdbscan_pca_52 |> mutate(pca = 52)
+
+hdbscan_pca_diff <- union(hdbscan_pca_3, hdbscan_pca_52)
+hdbscan_pca_diff <- hdbscan_pca_diff |> mutate(pca = factor(pca))
+
+hdbscan_pca_diff |> filter(between(min_cluster_size, 300, 580)) |> ggplot(aes(x = min_cluster_size, y = sil_score, color = pca)) + geom_line()
+
+
+# Silouette Score
+hdbscan_pca_3 |> filter(!is.na(sil_score)) |> summarise(avg_sil = mean(sil_score), min_sil = min(sil_score), max_sil = max(sil_score), min_davies = min(davies_score), max_davies = max(davies_score))
+
+hdbscan_pca_52 |> filter(!is.na(sil_score)) |> summarise(avg_sil = mean(sil_score), min_sil = min(sil_score), max_sil = max(sil_score), min_davies = min(davies_score), max_davies = max(davies_score))
+
+	
+
+
+```
+
+
+### Get Best Hyperparamters
+```{r}
+
+# Best hyperparam for pca-52
+hdbscan_pca_52 |> filter(!is.na(sil_score)) |> arrange(desc(sil_score)) |> select(min_cluster_size, min_samples, sil_score, davies_score)
+
+# 
+hdbscan_pca_52 |> filter(!is.na(sil_score)) |> arrange((davies_score)) |> select(min_cluster_size, min_samples, sil_score, davies_score)
+
+
+hdbscan_pca_3 |> group_by(min_cluster_size, min_samples) |> summarise(avg_sil = mean(sil_score), max_sil = max(sil_score)) |> arrange(desc(max_sil))
+
+# Davies Bouldin index
+hdbscan_pca_3 |> group_by(min_cluster_size, min_samples) |> summarise(avg_sil = mean(sil_score), max_sil = max(sil_score)) |> arrange(desc(max_sil))
+
+
+
+
+```
+
+
+
+
+
+
+### 2a) Kmeans Cluster illicit Percentage
+
+```{r}
+
+km <- read_csv("KMeans_cluster_info.csv")
+
+km_percent <- km |> count(cluster_gp, flag) |> group_by(cluster_gp) |> mutate(sum = sum(n)) |> ungroup() |> filter(flag == 1) |> group_by(cluster_gp) |> mutate(percent = n / sum * 100) |> select(cluster_gp, sum, percent)
+
+km_percent |> arrange(percent) |> ggplot(aes(cluster_gp, percent, fill = "blue")) + geom_col() + labs(x = "Clusters", y = "Percentage of illicit accounts (%)", title = "Percentage of illicit account in K-Means Clusters") + scale_fill_manual(values = c("#F8786D")) + theme(legend.position = "none") + coord_flip()
+
+print(km_percent)
+
+
+km_gp_0_55 <- km |> filter(cluster_gp == 0) |> rename(index = ...1)
+print(km_gp_0_55)
+
+km_gp_4_12 <- km |> filter(cluster_gp == 4) |> rename(index = ...1)
+print(km_gp_3_47)
+
+km_gp_6_98 <- km |> filter(cluster_gp == 6) |> rename(index = ...1)
+print(km_gp_3_47)
+
+km_gp_3_47 <- km |> filter(cluster_gp == 3) |> rename(index = ...1)
+print(km_gp_3_47)
+
+# write_csv(km_gp_0_55, "KM_gp_0_55_illicit.csv")
+# write_csv(km_gp_3_47, "KM_gp_3_47_illicit.csv")
+# write_csv(km_gp_4_12, "KM_gp_4_12_illicit.csv")
+# write_csv(km_gp_6_98, "KM_gp_6_98_illicit.csv")
+
+
+# Maybe can compare gp1+4 with gp02
+
+```
+
+
+### 
+
+
+```{r}
+hier <- read_csv("Hierarchical Cluster_cluster_info.csv")
+
+# Non-illcit clusters
+hier_non_illicit <- hier |> count(cluster_gp, flag) |> group_by(cluster_gp) |> mutate(sum = sum(n)) |> ungroup() |> filter(flag == 0 & n == sum) |> mutate(percent = 0) |> select(cluster_gp, sum, percent)
+
+# ERROR as some clusters not conatins any illicit flag (1)
+hier_percent <- hier |> count(cluster_gp, flag) |> group_by(cluster_gp) |> mutate(sum = sum(n)) |> ungroup() |> filter(flag == 1) |> group_by(cluster_gp) |> mutate(percent = n / sum * 100) |> select(cluster_gp, sum, percent)
+
+
+
+hier_all_clusters_percent <- union(hier_non_illicit, hier_percent)
+
+print(hier_all_clusters_percent)
+
+hier_all_clusters_percent |> mutate(cluster_gp = reorder(cluster_gp, percent)) |> ggplot(aes(cluster_gp, percent, fill = "blue")) + geom_col() + labs(x = "Clusters", y = "Percentage of illicit accounts (%)", title = "Percentage of illicit account in Hierarchical Clusters") + scale_fill_manual(values = c("#F8786D", "#0DBFC4")) + theme(legend.position = "none") + coord_flip()
+
+
+hier_gp_0 <- hier |> filter(cluster_gp == 0) |> rename(index = ...1)
+print(hier_gp_0)
+
+hier_gp_non0 <- hier |> filter(cluster_gp != 0) |> rename(index = ...1)
+
+write_csv(hier_gp_non0, "Hier_gp_non0.csv")
+
+
+
+
+
+```
+
+
+
+
